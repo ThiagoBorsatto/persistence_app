@@ -1,32 +1,41 @@
 // =============================================================================
-// WIDGET RAIZ — PortalCidadaoApp
+// WIDGET RAIZ — EstanteJogosApp
 // -----------------------------------------------------------------------------
 // Configura o MaterialApp e gerencia o estado do TEMA (claro/escuro),
 // persistindo cada alternância no SharedPreferences via ThemePreferences.
+//
+// A ordenação da lista chega aqui apenas como valor INICIAL (lido no main) e é
+// repassada à HomePage, que a gerencia e persiste — porque só a lista depende
+// dela, enquanto o tema afeta o MaterialApp inteiro.
 // =============================================================================
 import 'package:flutter/material.dart';
 
-import 'data/i_politico_repository.dart';
+import 'data/i_jogo_repository.dart';
 import 'data/theme_preferences.dart';
+import 'models/ordem_jogos.dart';
 import 'ui/home_page.dart';
 
-class PortalCidadaoApp extends StatefulWidget {
+class EstanteJogosApp extends StatefulWidget {
   final bool temaInicialEscuro;
 
-  /// Repositório injetável (opcional). Usado nos testes de UI.
-  final IPoliticoRepository? repository;
+  /// Ordenação lida do SharedPreferences no bootstrap.
+  final OrdemJogos ordemInicial;
 
-  const PortalCidadaoApp({
+  /// Repositório injetável (opcional). Usado nos testes de UI.
+  final IJogoRepository? repository;
+
+  const EstanteJogosApp({
     super.key,
     required this.temaInicialEscuro,
+    this.ordemInicial = OrdemJogos.padrao,
     this.repository,
   });
 
   @override
-  State<PortalCidadaoApp> createState() => _PortalCidadaoAppState();
+  State<EstanteJogosApp> createState() => _EstanteJogosAppState();
 }
 
-class _PortalCidadaoAppState extends State<PortalCidadaoApp> {
+class _EstanteJogosAppState extends State<EstanteJogosApp> {
   final ThemePreferences _themePrefs = ThemePreferences();
   late bool _isDarkMode;
 
@@ -44,10 +53,11 @@ class _PortalCidadaoAppState extends State<PortalCidadaoApp> {
 
   @override
   Widget build(BuildContext context) {
-    const Color seed = Color(0xFF1565C0);
+    // Roxo "gamer" como cor semente do Material 3.
+    const Color seed = Color(0xFF6A1B9A);
 
     return MaterialApp(
-      title: 'Portal Cidadão',
+      title: 'Estante de Jogos',
       debugShowCheckedModeBanner: false,
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData(
@@ -64,6 +74,7 @@ class _PortalCidadaoAppState extends State<PortalCidadaoApp> {
       home: HomePage(
         isDarkMode: _isDarkMode,
         onAlternarTema: _alternarTema,
+        ordemInicial: widget.ordemInicial,
         repository: widget.repository,
       ),
     );

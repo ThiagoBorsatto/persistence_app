@@ -1,11 +1,11 @@
 {
-    "name": "persistence_app",
-    "short_name": "persistence_app",
+    "name": "Estante de Jogos",
+    "short_name": "Estante",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Estante de jogos offline com SQLite + SharedPreferences.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

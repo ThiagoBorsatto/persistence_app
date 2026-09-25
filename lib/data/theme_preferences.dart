@@ -3,6 +3,9 @@
 // -----------------------------------------------------------------------------
 // Encapsula o acesso ao SharedPreferences para a configuração de TEMA.
 // A UI não lida com chaves de string soltas — pede load()/save() num tipo claro.
+//
+// É uma das DUAS preferências persistidas do app; a outra é a ordenação da
+// lista, em `ordenacao_preferences.dart`.
 // =============================================================================
 import 'package:shared_preferences/shared_preferences.dart';
 
