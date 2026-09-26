@@ -6,6 +6,7 @@ Aplicativo Flutter que demonstra, na prática, **Persistência de Dados Local** 
 |---|---|---|
 | **SQLite** | Dados estruturados: o CRUD de jogos (tabela relacional) | [`sqflite`](https://pub.dev/packages/sqflite) + [`path`](https://pub.dev/packages/path) |
 | **SharedPreferences** | Configurações chave-valor: o **tema** (claro/escuro) e a **ordenação da lista** | [`shared_preferences`](https://pub.dev/packages/shared_preferences) |
+| **SQLite (WebAssembly)** | O mesmo banco, quando o app roda no navegador | [`sqflite_common_ffi_web`](https://pub.dev/packages/sqflite_common_ffi_web) |
 
 O usuário pode **cadastrar, listar, pesquisar, editar e remover** os jogos da sua estante — tudo salvo **offline** no dispositivo.
 
@@ -15,13 +16,21 @@ O usuário pode **cadastrar, listar, pesquisar, editar e remover** os jogos da s
 
 ## 🎬 Demonstração
 
-<!-- Grave a tela do emulador Android mostrando: cadastro de 2 jogos, pesquisa,
-     edição, troca de ordenação, troca de tema, fechar/reabrir o app (as duas
-     preferências continuam) e remoção com confirmação. Salve em docs/demo.gif. -->
-
 <p align="center">
   <img src="docs/demo.gif" alt="Demonstração da Estante de Jogos" width="300"/>
 </p>
+
+O GIF percorre o app inteiro: estado vazio → cadastro de 3 jogos → pesquisa por
+gênero → troca da ordenação (para *Nota, maior primeiro*) → edição de uma nota →
+tema escuro → remoção com confirmação → e a **reabertura do app**, que volta
+escuro, ordenado por nota e com os jogos que ficaram no banco.
+
+> **Como ele foi gerado:** não é uma gravação manual de tela. Cada quadro é um
+> print tirado pelo teste de integração `integration_test/demo_test.dart`, que
+> dirige o app **de verdade** — com SQLite e SharedPreferences reais. A captura
+> rodou no **Chrome**, onde o banco é o mesmo SQLite compilado para WebAssembly
+> (veja *Rodando no navegador*, abaixo). O mesmo teste roda em um emulador ou
+> celular Android com um único comando, sem alterar nada no app.
 
 ---
 
@@ -105,6 +114,9 @@ lib/
 │
 ├── data/                            # Camada de dados (persistência)
 │   ├── database_helper.dart         # Singleton do SQLite (abre banco + cria schema)
+│   ├── db_platform.dart             # Escolhe o SQLite nativo (Android/iOS) ou o WebAssembly
+│   ├── db_platform_io.dart          #   └─ Android/iOS: nada a fazer
+│   ├── db_platform_web.dart         #   └─ navegador: SQLite WebAssembly + IndexedDB
 │   ├── i_jogo_repository.dart       # Contrato (interface) do repositório
 │   ├── jogo_repository.dart         # CRUD (isola o SQL da UI)
 │   ├── theme_preferences.dart       # Wrapper do SharedPreferences (tema)
@@ -166,7 +178,22 @@ Para escolher um dispositivo específico:
 flutter run -d <id-do-dispositivo>   # ex.: flutter run -d emulator-5554
 ```
 
-> **Observação sobre plataformas:** o `sqflite` roda nativamente em **Android** e **iOS**. Em desktop/web ele precisa do pacote auxiliar `sqflite_common_ffi` (usado apenas nos testes deste projeto). Para a demonstração, use **Android ou iOS**.
+### Rodando no navegador
+
+O `sqflite` é nativo em **Android** e **iOS** — lá não há nada a configurar. Para
+o app também rodar no Chrome, `lib/data/db_platform.dart` troca, **em tempo de
+compilação**, o banco nativo pelo `sqflite_common_ffi_web`: o mesmo SQLite,
+compilado para WebAssembly, persistindo em IndexedDB. Nenhum `if` de plataforma
+espalhado pelo código, e o build do Android não enxerga o código de web.
+
+```bash
+# Uma vez: copia sqlite3.wasm e sqflite_sw.js para web/
+dart run sqflite_common_ffi_web:setup
+
+flutter run -d chrome
+```
+
+Os dados no navegador também sobrevivem ao fechar e reabrir a aba.
 
 ---
 
@@ -193,6 +220,24 @@ Os **18 testes** cobrem:
 5. **UI** — estado vazio, lista com dados, filtro de busca, cadastro, validação da nota (0 a 10), edição e remoção com confirmação.
 6. **Ordenação de ponta a ponta** — trocar no menu reordena a lista **e** grava a preferência; e o app **reabre** já na ordem que estava salva.
 
+### Teste de integração (o app rodando de verdade)
+
+Além dos 18 testes acima, `integration_test/demo_test.dart` sobe o app inteiro,
+**sem repositório fake**: SQLite real e SharedPreferences real. Ele percorre o
+roteiro completo (cadastrar → pesquisar → ordenar → editar → tema → remover →
+reabrir) e tira um print em cada etapa — são esses prints que viram o GIF.
+
+```bash
+# No navegador (precisa do chromedriver na versão do seu Chrome):
+chromedriver --port=4444
+flutter drive --driver=test_driver/integration_test.dart               --target=integration_test/demo_test.dart               -d chrome --browser-name=chrome --browser-dimension=420x900@2
+
+# Em um emulador ou celular Android conectado:
+flutter drive --driver=test_driver/integration_test.dart               --target=integration_test/demo_test.dart
+```
+
+Os prints saem em `.demo_frames/` (fora do controle de versão).
+
 Para checar o código estático (lint):
 
 ```bash
@@ -217,12 +262,15 @@ flutter analyze     # deve retornar: No issues found!
 
 ```yaml
 dependencies:
-  sqflite: ^2.3.3+1          # Banco relacional embarcado (SQLite)
-  path: ^1.9.0               # Monta o caminho do arquivo do banco por SO
-  shared_preferences: ^2.2.3 # Armazenamento chave-valor (tema + ordenação)
+  sqflite: ^2.3.3+1              # Banco relacional embarcado (SQLite)
+  path: ^1.9.0                   # Monta o caminho do arquivo do banco por SO
+  shared_preferences: ^2.2.3     # Armazenamento chave-valor (tema + ordenação)
+  sqflite_common_ffi_web: ^1.2.0 # O mesmo SQLite, em WebAssembly, para o navegador
 
 dev_dependencies:
   sqflite_common_ffi: ^2.4.0+3 # SQLite em memória para os testes (desktop/CI)
+  integration_test:            # Testes com o app rodando de verdade
+    sdk: flutter
 ```
 
 ---
@@ -236,7 +284,8 @@ dev_dependencies:
 | Repositório | `PoliticoRepository`, `getAll()` fixo em nome A→Z | `JogoRepository`, `getAll({ordem})` com `ORDER BY` variável |
 | Preferências | 1 (tema) | **2** (tema + ⭐ ordenação da lista) |
 | Widgets | `PoliticoCard`, `PoliticoForm` | `JogoCard` (+ selo de nota), `JogoForm` (4 campos) |
-| Testes | 8 | **18** |
+| Testes | 8 | **18** + 1 de integração (que gera o GIF) |
+| Plataformas | Android/iOS | Android/iOS **e navegador** (SQLite WebAssembly) |
 
 ---
 
