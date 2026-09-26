@@ -52,3 +52,6 @@ app.*.map.json
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3
 **/ios/**/*.pbxuser
+
+# Frames intermediarios do GIF de demonstracao (gerados por flutter drive)
+.demo_frames/

@@ -18,9 +18,13 @@ dependencies:
   path: ^1.9.0
   # Armazenamento simples chave-valor (preferências do usuário)
   shared_preferences: ^2.2.3
+  sqflite_common_ffi_web: ^1.2.0
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  # Testes de integração: rodam o app DE VERDADE (navegador ou device).
+  integration_test:
     sdk: flutter
   flutter_lints: ^4.0.0
   sqflite_common_ffi: ^2.4.0+3

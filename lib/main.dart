@@ -18,6 +18,7 @@
 //   │   └── ordem_jogos.dart             -> enum das opções de ordenação
 //   ├── data/
 //   │   ├── database_helper.dart         -> Singleton SQLite (abertura + schema)
+//   │   ├── db_platform*.dart            -> escolhe o SQLite nativo ou o WebAssembly
 //   │   ├── i_jogo_repository.dart       -> contrato do repositório
 //   │   ├── jogo_repository.dart         -> CRUD (isola o sqflite da UI)
 //   │   ├── theme_preferences.dart       -> SharedPreferences (tema)
@@ -29,6 +30,7 @@
 import 'package:flutter/material.dart';
 
 import 'app.dart';
+import 'data/db_platform.dart';
 import 'data/ordenacao_preferences.dart';
 import 'data/theme_preferences.dart';
 import 'models/ordem_jogos.dart';
@@ -36,6 +38,10 @@ import 'models/ordem_jogos.dart';
 Future<void> main() async {
   // Obrigatório: usamos código assíncrono (SharedPreferences) antes do runApp.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Em Android/iOS não faz nada (o SQLite é nativo). No navegador, registra o
+  // SQLite WebAssembly como banco do app. Precisa vir ANTES da primeira query.
+  await configurarBancoDaPlataforma();
 
   // Carrega as preferências persistidas (defaults na 1ª execução:
   // Modo Claro e ordenação por Título A → Z).
